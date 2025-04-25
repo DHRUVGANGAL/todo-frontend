@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Todo List</title>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 600px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-top: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2rem;
+        }
+
+        .input-section {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        #todo-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        #todo-input:focus {
+            outline: none;
+            border-color: #4CAF50;
+        }
+
+        button {
+            background: #4CAF50;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+            white-space: nowrap;
+        }
+
+        button:hover {
+            background: #45a049;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(1px);
+        }
+
+        .todo-list {
+            list-style: none;
+        }
+
+        .todo-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f9f9f9;
+            margin-bottom: 10px;
+            border-radius: 5px;
+            animation: slideIn 0.3s ease;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .todo-item.completed {
+            background: #e8f5e9;
+            text-decoration: line-through;
+            color: #666;
+        }
+
+        .todo-item input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+            cursor: pointer;
+        }
+
+        .todo-text {
+            flex: 1;
+            min-width: 150px;
+            word-break: break-word;
+        }
+
+        .delete-btn {
+            background: #f44336;
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .delete-btn:hover {
+            background: #da190b;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            margin-top: 20px;
+        }
+
+        /* Responsive Design */
+        @media screen and (max-width: 480px) {
+            body {
+                padding: 10px;
+            }
+
+            .container {
+                padding: 15px;
+                margin-top: 10px;
+            }
+
+            h1 {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+
+            .input-section {
+                flex-direction: column;
+                gap: 10px;
+            }
+
+            #todo-input {
+                width: 100%;
+                min-width: unset;
+            }
+
+            button {
+                width: 100%;
+                padding: 12px;
+            }
+
+            .todo-item {
+                padding: 10px;
+            }
+
+            .todo-text {
+                width: 100%;
+                order: 1;
+            }
+
+            .delete-btn {
+                width: 100%;
+                order: 2;
+            }
+        }
+
+        @media screen and (min-width: 481px) and (max-width: 768px) {
+            .container {
+                max-width: 90%;
+            }
+
+            .input-section {
+                gap: 8px;
+            }
+
+            button {
+                padding: 12px 20px;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            body {
+                background: #03346E
+            }
+
+            .container {
+                background: #2d2d2d;
+                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.15);
+            }
+
+            h1 {
+                color: #ffffff;
+            }
+
+            #todo-input {
+                background: #3d3d3d;
+                border-color: #4d4d4d;
+                color: #ffffff;
+            }
+
+            .todo-item {
+                background: #3d3d3d;
+                color: #ffffff;
+            }
+
+            .todo-item.completed {
+                background: #2d3d2d;
+                color: #aaaaaa;
+            }
+
+            .empty-message {
+                color: #888888;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Todo List</h1>
+        <div class="input-section">
+            <input type="text" id="todo-input" placeholder="Add a new task...">
+            <button onclick="addTodo()">Add Task</button>
+        </div>
+        <ul class="todo-list" id="todo-list">
+            <!-- Todo items will be added here -->
+        </ul>
+        <p class="empty-message" id="empty-message">No tasks yet. Add a new task above!</p>
+    </div>
+
+    <script>
+        const todoInput = document.getElementById('todo-input');
+        const todoList = document.getElementById('todo-list');
+        const emptyMessage = document.getElementById('empty-message');
+        // const todoText = todoInput.value.trim();
+
+        async function addTodo() {
+    try {
+        const todoText = todoInput.value.trim();
+        if (todoText === '') return;
+
+        const token = localStorage.getItem('token');
+        
+        // Add todo
+        const response = await axios.post("https://todo-backend-smoky-psi.vercel.app/todo", {
+            title: todoText
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'token': token
+            }
+        });
+
+        // If successful, add to UI
+        if (response.data) {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.dataset.id = response.data._id; // Store todo ID for deletion
+            
+            li.innerHTML = `
+                <input type="checkbox" onchange="toggleComplete(this)">
+                <span class="todo-text">${response.data.title}</span>
+                <button class="delete-btn" onclick="deleteTodo(this)">Delete</button>
+            `;
+
+            todoList.appendChild(li);
+            todoInput.value = '';
+            updateEmptyMessage();
+        }
+
+    } catch (error) {
+        console.error('Error adding todo:', error);
+        alert(error.response?.data?.message || 'Error adding todo');
+    }
+}
+
+
+
+
+
+async function toggleComplete(checkbox) {
+    try {
+        const todoItem = checkbox.parentElement;
+        const todoId = todoItem.dataset.id;
+        const token = localStorage.getItem('token');
+        
+        
+        // Make request before updating UI
+        const response = await axios.put(`https://todo-backend-smoky-psi.vercel.app/update-todo/${todoId}`, {
+            completed: checkbox.checked
+        }, {
+            headers: {
+                'Content-Type': 'application/json',
+                'token': token 
+            }
+        });
+         await console.log(checkbox.checked, response.data.completed)
+        // Only update UI if request was successful
+        if (!response.data.completed ) {
+            todoItem.classList.add('completed');
+        }
+        else{
+            todoItem.classList.remove('completed');
+        }
+       
+        // todoItem.classList.toggle('completed');
+    } catch (error) {
+        // Revert checkbox state since update failed
+        checkbox.checked = !checkbox.checked;
+        
+        // More specific error handling
+        const errorMessage = error.response?.data?.message || 'Error updating todo';
+        // Using a modal or toast instead of alert for better UX
+        showError(errorMessage);
+    }
+}
+
+
+
+
+
+
+
+        async function deleteTodo(button) {
+    try {
+        const token = localStorage.getItem('token');
+        const todoItem = button.parentElement;
+        const todoId = todoItem.dataset.id;
+
+        await axios.delete(`https://todo-backend-smoky-psi.vercel.app/delete-todo/${todoId}`, {
+            headers: {
+                'token': token
+            }
+        });
+
+        todoItem.style.animation = 'slideIn 0.3s ease reverse';
+        setTimeout(() => {
+            todoItem.remove();
+            updateEmptyMessage();
+        }, 300);
+
+    } catch (error) {
+        console.error('Error deleting todo:', error);
+        alert(error.response?.data?.message || 'Error deleting todo');
+    }
+}
+
+
+        function updateEmptyMessage() {
+            emptyMessage.style.display = todoList.children.length === 0 ? 'block' : 'none';
+        }
+
+
+
+        async function loadTodos() {
+    try {
+        const token = localStorage.getItem('token');
+        const response = await axios.get('https://todo-backend-smoky-psi.vercel.app/todos', {
+            headers: {
+                'token': token
+            }
+        });
+        // Function to load todos when page loads
+        const todos = response.data;
+        todos.forEach(todo => {
+            const li = document.createElement('li');
+            li.className = 'todo-item';
+            li.dataset.id = todo._id;
+             // Check if todo is completed and add 'completed' class if true
+             if (todo.completed) {
+                li.classList.add('completed');
+            }
+
+            
+            
+            li.innerHTML = `
+                <input type="checkbox" ${todo.completed ? 'checked' : ''} onchange="toggleComplete(this)">
+                <span class="todo-text">${todo.title}</span>
+                <button class="delete-btn" onclick="deleteTodo(this)">Delete</button>
+            `;
+            
+
+            todoList.appendChild(li);
+           
+           
+            
+            
+        });
+        
+        updateEmptyMessage();
+
+    } catch (error) {
+        console.error('Error loading todos:', error);
+        alert(error.response?.data?.message || 'Error loading todos');
+    }
+}
+
+// Call loadTodos when page loads
+document.addEventListener('DOMContentLoaded', loadTodos);
+
+        // Add todo when Enter key is pressed
+        todoInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addTodo();
+            }
+        });
+    </script>
+</body>
+</html>
