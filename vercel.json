@@ -1,19 +1,9 @@
 {
-    "version": 2,
-    "cleanUrls": true,
-    "trailingSlash": false,
-    "routes": [
-      {
-        "src": "/",
-        "dest": "/index.html"
-      },
-      {
-        "src": "/signin",
-        "dest": "/signin.html"
-      },
-      {
-        "src": "/todo",
-        "dest": "/todo.html"
-      }
-    ]
-  }
+  "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
+  "rewrites": [
+    { "source": "/signin", "destination": "/signin.html" },
+    { "source": "/todo", "destination": "/todo.html" }
+  ]
+}
